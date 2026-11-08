@@ -1,0 +1,368 @@
+{
+  "name": "code-screenshot",
+  "displayName": "Code Screenshot & Code Snapshot (Copy Code as Image, PNG/SVG)",
+  "description": "Code screenshot and code snapshot in one key: select code, press Cmd+Alt+C (Shift+Alt+C) and a PNG of it is on your clipboard, in your editor theme, font and colors. Save PNG or SVG, line numbers, highlights, window frame, backgrounds. Free, no sign-in, works offline.",
+  "version": "0.1.0",
+  "publisher": "zovo",
+  "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#2B2140",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "code screenshot",
+    "code snapshot",
+    "code image",
+    "screenshot",
+    "share code",
+    "code to image",
+    "png",
+    "svg",
+    "clipboard",
+    "syntax highlighting",
+    "social",
+    "slides",
+    "offline"
+  ],
+  "main": "./dist/extension.js",
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "activationEvents": [
+    "onCommand:codeScreenshot.copy",
+    "onCommand:codeScreenshot.open",
+    "onCommand:codeScreenshot.savePng",
+    "onCommand:codeScreenshot.saveSvg",
+    "onCommand:codeScreenshot.copySvg",
+    "onCommand:codeScreenshot.openWalkthrough",
+    "onWebviewPanel:codeScreenshot.panel"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeScreenshot.copy",
+        "title": "Copy as Image (PNG)",
+        "category": "Code Screenshot",
+        "icon": "$(device-camera)"
+      },
+      {
+        "command": "codeScreenshot.open",
+        "title": "Open Panel (preview and options)",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.savePng",
+        "title": "Save as PNG",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.saveSvg",
+        "title": "Save as SVG",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.copySvg",
+        "title": "Copy as SVG Code",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.openWalkthrough",
+        "title": "Get Started",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.supportDeveloper",
+        "title": "Support the developer",
+        "category": "Code Screenshot"
+      },
+      {
+        "command": "codeScreenshot.moreViewers",
+        "title": "More free viewers",
+        "category": "Code Screenshot"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "codeScreenshot.copy",
+        "key": "shift+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "editorTextFocus && !findWidgetVisible"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codeScreenshot.copy",
+          "group": "9_cutcopypaste@9",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "codeScreenshot.open",
+          "group": "9_cutcopypaste@10",
+          "when": "editorTextFocus"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "codeScreenshot.copy",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "codeScreenshot.savePng",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "codeScreenshot.saveSvg",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "codeScreenshot.copySvg",
+          "when": "editorIsOpen"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Screenshot",
+      "properties": {
+        "codeScreenshot.scale": {
+          "type": "number",
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "default": 2,
+          "description": "PNG pixels per point: 2 is sharp on most screens, 3 or 4 for print and slides. Changes in the panel are remembered and win over this default."
+        },
+        "codeScreenshot.lineNumbers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show line numbers. They are the real line numbers from the file."
+        },
+        "codeScreenshot.frame": {
+          "type": "string",
+          "enum": [
+            "mac",
+            "plain",
+            "none"
+          ],
+          "enumDescriptions": [
+            "A window with three dots and a title.",
+            "A window with a title, no dots.",
+            "No window: just the code on its background."
+          ],
+          "default": "mac",
+          "description": "The window frame around the code."
+        },
+        "codeScreenshot.showTitle": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the file name (or your own title from the panel) in the window frame."
+        },
+        "codeScreenshot.background": {
+          "type": "string",
+          "enum": [
+            "gradient-1",
+            "gradient-2",
+            "gradient-3",
+            "gradient-4",
+            "gradient-5",
+            "solid",
+            "editor",
+            "transparent"
+          ],
+          "enumDescriptions": [
+            "Gradient: dusk",
+            "Gradient: sea",
+            "Gradient: peach",
+            "Gradient: mint",
+            "Gradient: night",
+            "One color (codeScreenshot.backgroundColor)",
+            "The editor background color",
+            "Transparent (PNG and SVG keep the transparency)"
+          ],
+          "default": "gradient-1",
+          "description": "The background around the window."
+        },
+        "codeScreenshot.backgroundColor": {
+          "type": "string",
+          "default": "#6c5ce7",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "The color for the \"solid\" background, as #rrggbb."
+        },
+        "codeScreenshot.padding": {
+          "type": "number",
+          "default": 48,
+          "minimum": 0,
+          "maximum": 128,
+          "description": "Space around the window, in points."
+        },
+        "codeScreenshot.shadow": {
+          "type": "boolean",
+          "default": true,
+          "description": "Draw a shadow under the window (needs some padding)."
+        },
+        "codeScreenshot.cornerRadius": {
+          "type": "number",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 24,
+          "description": "Rounded corners of the window, in points."
+        },
+        "codeScreenshot.removeCommonIndent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Remove the indent that all selected lines share, so a nested block starts at the left edge. The indent inside the block stays as it is."
+        },
+        "codeScreenshot.wrapColumn": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 400,
+          "description": "Wrap long lines at this many columns. 0 means no wrapping. Wrapped parts keep the line's indent and have no line number."
+        },
+        "codeScreenshot.fontFamily": {
+          "type": "string",
+          "default": "",
+          "description": "Font for the picture. Empty uses your editor font (editor.fontFamily), with its size, weight, ligatures and line height."
+        },
+        "codeScreenshot.maxLines": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 10,
+          "maximum": 20000,
+          "description": "Draw at most this many lines. A longer selection draws the first lines and says how many were left out."
+        },
+        "codeScreenshot.maxLineLength": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 80,
+          "maximum": 20000,
+          "description": "Longer lines are cut at this many characters (for example minified files), and the panel says so."
+        },
+        "codeScreenshot.whenNothingSelected": {
+          "type": "string",
+          "enum": [
+            "visible",
+            "file"
+          ],
+          "enumDescriptions": [
+            "Take the lines you can see in the editor.",
+            "Take the whole file (up to codeScreenshot.maxLines)."
+          ],
+          "default": "visible",
+          "description": "What to take when nothing is selected."
+        },
+        "codeScreenshot.saveFolder": {
+          "type": "string",
+          "default": "",
+          "description": "Folder for saved pictures. Empty uses the last folder you saved to, then the file's folder. You can use ~ and ${workspaceFolder}."
+        },
+        "codeScreenshot.askWhereToSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the save dialog. When off, Save writes <file>-L12-L40.png into the save folder at once (with -2, -3 if the name is taken)."
+        },
+        "codeScreenshot.followSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "While the panel is open, update the picture when you select other lines in the same file."
+        },
+        "codeScreenshot.askForRating": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for a Marketplace rating after you have used Code Screenshot on a few days. You can answer \"Later\" or \"No thanks\". Nothing is sent anywhere."
+        },
+        "codeScreenshot.showSupportLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the small Sponsor and More free viewers links at the bottom of the panel (never in the picture). Nothing is sent anywhere."
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "codeScreenshot.start",
+        "title": "Get started with Code Screenshot",
+        "description": "Turn selected code into a PNG on your clipboard with one key. No account and no network.",
+        "steps": [
+          {
+            "id": "copy",
+            "title": "Copy code as an image",
+            "description": "Select some lines and press Cmd+Alt+C (Shift+Alt+C on Windows and Linux), or right-click and pick Copy as Image. The PNG is on your clipboard: paste it into a chat, a doc or a slide.\n[Copy the selection now](command:codeScreenshot.copy)",
+            "media": {
+              "markdown": "walkthrough/copy.md"
+            },
+            "completionEvents": [
+              "onCommand:codeScreenshot.copy"
+            ]
+          },
+          {
+            "id": "style",
+            "title": "Frame, background and highlights",
+            "description": "Open Options in the panel: window frame, title, background, padding, shadow, line numbers and wrapping. Click a line to highlight it, double-click a word to mark it.",
+            "media": {
+              "markdown": "walkthrough/style.md"
+            }
+          },
+          {
+            "id": "save",
+            "title": "Save PNG or SVG",
+            "description": "Save PNG or Save SVG names the file after the lines, like app.ts-L12-L40.png, in the folder you used last. SVG keeps the text as text.",
+            "media": {
+              "markdown": "walkthrough/save.md"
+            }
+          },
+          {
+            "id": "settings",
+            "title": "Defaults and limits",
+            "description": "Pick the defaults for new pictures, the save folder and the size limits.\n[Open settings](command:workbench.action.openSettings?%5B%22codeScreenshot%22%5D)",
+            "media": {
+              "markdown": "walkthrough/settings.md"
+            },
+            "completionEvents": [
+              "onCommand:workbench.action.openSettings"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node scripts/build.js && node --test \"test/*.test.js\"",
+    "package": "node scripts/build.js --production && node -e \"require('fs').mkdirSync('dist-vsix',{recursive:true})\" && npx -y @vscode/vsce package --no-dependencies -o dist-vsix/"
+  },
+  "devDependencies": {
+    "vscode-textmate": "9.2.0",
+    "vscode-oniguruma": "2.0.1",
+    "esbuild": "^0.28.2"
+  },
+  "homepage": "https://github.com/theluckystrike/code-screenshot-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/theluckystrike/code-screenshot-vscode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theluckystrike/code-screenshot-vscode"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/theluckystrike"
+  }
+}

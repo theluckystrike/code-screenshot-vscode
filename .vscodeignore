@@ -1,0 +1,14 @@
+src/**
+test/**
+scripts/**
+samples/**
+images/**
+node_modules/**
+.github/**
+.e2e/**
+dist-vsix/**
+**/*.map
+icon.svg
+.gitignore
+*.vsix
+package-lock.json
