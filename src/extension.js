@@ -7,7 +7,7 @@ const vscode = require('vscode');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const { buildHtml } = require('./html');
 const L = require('./core/layout');
 const { resolveTheme } = require('./core/theme');
@@ -17,7 +17,7 @@ const { registerSupport, commandUris, showLinks } = require('./support');
 
 const SECTION = 'codeScreenshot';
 const VIEW_TYPE = 'codeScreenshot.panel';
-const EXT_ID = 'zovo.code-screenshot';
+const EXT_ID = 'zovo.zovo-code-screenshot';
 const PREFS_KEY = 'codeScreenshot.prefs.v1';
 const FOLDER_KEY = 'codeScreenshot.lastFolder';
 let rating = { success() {}, failure() {} };
@@ -158,8 +158,15 @@ function copyImageFile(file) {
       const wl = !!process.env.WAYLAND_DISPLAY;
       const cmd = wl ? 'wl-copy' : 'xclip';
       const args = wl ? ['--type', 'image/png'] : ['-selection', 'clipboard', '-t', 'image/png', '-i', file];
-      const child = execFile(cmd, args, { timeout: 10000 }, err => done(err && err.code === 'ENOENT' ? new Error(`${cmd} is not installed (${wl ? 'package wl-clipboard' : 'package xclip'})`) : err));
-      if (wl && child.stdin) child.stdin.end(fs.readFileSync(file));
+      // xclip and wl-copy leave a process behind that serves the clipboard and keeps the inherited pipes open,
+      // so wait for the command itself to exit (not for its output streams to close).
+      let finished = false;
+      const end = err => { if (!finished) { finished = true; clearTimeout(timer); done(err); } };
+      const child = spawn(cmd, args, { stdio: [wl ? 'pipe' : 'ignore', 'ignore', 'ignore'], detached: false });
+      const timer = setTimeout(() => { try { child.kill(); } catch {} end(new Error(`${cmd} did not answer in 10 s`)); }, 10000);
+      child.on('error', err => end(err && err.code === 'ENOENT' ? new Error(`${cmd} is not installed (${wl ? 'package wl-clipboard' : 'package xclip'})`) : err));
+      child.on('exit', code => end(code ? new Error(`${cmd} ended with code ${code}`) : null));
+      if (wl && child.stdin) { child.stdin.on('error', () => {}); child.stdin.end(fs.readFileSync(file)); }
     }
   });
 }
@@ -185,7 +192,7 @@ function expandFolder(p, docUri) {
   if (!p) return null;
   let s = p.replace(/^~(?=$|[\\/])/, os.homedir());
   const wf = docUri && vscode.workspace.getWorkspaceFolder(docUri) || (vscode.workspace.workspaceFolders || [])[0];
-  if (/\$\{workspaceFolder\}/.test(s)) { if (!wf || wf.uri.scheme !== 'file') return null; s = s.replace(/\$\{workspaceFolder\}/g, wf.uri.fsPath); }
+  if (/\$\{workspaceFolder\}/.test(s)) { if (!wf || wf.uri.scheme !== 'file') return null; s = s.replace(/\$\{workspaceFolder\}/g, () => wf.uri.fsPath); }
   if (!path.isAbsolute(s)) { if (!wf || wf.uri.scheme !== 'file') return null; s = path.join(wf.uri.fsPath, s); }
   return vscode.Uri.file(s);
 }
@@ -329,7 +336,7 @@ class Panel {
 
   async onPng(m) {
     const bytes = pngBytes(m.data);
-    if (!bytes) { vscode.window.showErrorMessage('Code Screenshot: the panel did not send a PNG.'); this.settle(m.reqId, { ok: false }); return; }
+    if (!bytes) { vscode.window.showErrorMessage('Code Screenshot: the panel did not send a PNG.'); rating.failure(); this.settle(m.reqId, { ok: false }); return; }
     const size = `${Number(m.w) | 0} × ${Number(m.h) | 0} px`;
     const docUri = this.model ? vscode.Uri.parse(this.model.uri) : undefined;
     if (m.purpose === 'savePng') {
@@ -358,9 +365,10 @@ class Panel {
       this.settle(m.reqId, { ok: true, w: m.w, h: m.h, scale: m.scale });
     } catch (err) {
       const why = String(err && err.message || err).split('\n')[0].slice(0, 200);
+      rating.failure(); // no rating ask after the main feature failed, even when the PNG is saved instead
       this.post({ type: 'copyFailed', text: `Could not put the image on the clipboard (${why}). Your clipboard was not changed.`, tryPanel: false });
       const pick = await vscode.window.showWarningMessage(`Code Screenshot could not put the image on the clipboard (${why}). Your clipboard was not changed.`, 'Save PNG');
-      if (pick) { const t = await saveBytes(bytes, this.model.names.png, 'png', docUri); if (t) this.success(); }
+      if (pick) await saveBytes(bytes, this.model.names.png, 'png', docUri);
       this.settle(m.reqId, { ok: false, error: why });
     } finally {
       try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}

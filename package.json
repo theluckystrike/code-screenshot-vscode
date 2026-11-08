@@ -1,5 +1,5 @@
 {
-  "name": "code-screenshot",
+  "name": "zovo-code-screenshot",
   "displayName": "Code Screenshot & Code Snapshot (Copy Code as Image, PNG/SVG)",
   "description": "Code screenshot and code snapshot in one key: select code, press Cmd+Alt+C (Shift+Alt+C) and a PNG of it is on your clipboard, in your editor theme, font and colors. Save PNG or SVG, line numbers, highlights, window frame, backgrounds. Free, no sign-in, works offline.",
   "version": "0.1.0",
@@ -48,7 +48,12 @@
   ],
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": true
+      "supported": "limited",
+      "description": "In Restricted Mode the save folder settings of the workspace are not used.",
+      "restrictedConfigurations": [
+        "codeScreenshot.saveFolder",
+        "codeScreenshot.askWhereToSave"
+      ]
     },
     "virtualWorkspaces": true
   },

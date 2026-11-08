@@ -162,6 +162,13 @@ function ligatureCss(lig) {
 }
 
 // ---------- drawing ----------
+/** XML 1.0 forbids C0 control characters (except tab, LF, CR), U+FFFE/U+FFFF and lone surrogates. They would make the
+ *  SVG invalid, and then the PNG too. Show them as the editor does, as visible symbols (form feed becomes \u240C). */
+function xmlSafe(s) {
+  return String(s).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|[\ufffe\uffff]|[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/g,
+    (c, pre) => pre !== undefined && c.length === 2 ? pre + '\ufffd' : c === '\x7f' ? '\u2421' : c.length === 1 && c < ' ' ? String.fromCharCode(0x2400 + c.charCodeAt(0)) : '\ufffd');
+}
+
 function el(name, attrs, parent) {
   const e = document.createElementNS(SVGNS, name);
   if (attrs) for (const k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, String(attrs[k]));
@@ -245,7 +252,7 @@ async function drawNow() {
   const dark = relLum(solidHex(c.background)) < 0.4;
   const stage = $('stage');
   const svg = el('svg', { xmlns: SVGNS, role: 'img' });
-  svg.setAttribute('aria-label', 'Code from ' + model.fileName);
+  svg.setAttribute('aria-label', xmlSafe('Code from ' + model.fileName));
   const defs = el('defs', null, svg);
   const bgLayer = el('g', null, svg);
   const win = el('g', null, svg);
@@ -276,7 +283,7 @@ async function drawNow() {
       if (s[2] & 1) sp.setAttribute('font-style', 'italic');
       if (s[2] & 2) sp.setAttribute('font-weight', 'bold');
       if (s[2] & 12) sp.setAttribute('text-decoration', [(s[2] & 4) ? 'underline' : '', (s[2] & 8) ? 'line-through' : ''].filter(Boolean).join(' '));
-      sp.textContent = s[0];
+      sp.textContent = xmlSafe(s[0]);
     }
     texts.push(t);
     const w = r.text.length ? t.getComputedTextLength() : 0;
@@ -328,7 +335,7 @@ async function drawNow() {
     }
     if (title) {
       const tt = el('text', { x: Math.round(winW / 2), y: Math.round(barH / 2), 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': fontStack(f), 'font-size': Math.round(px * 0.9), fill: solidHex(c.foreground), 'fill-opacity': 0.62 }, win);
-      tt.textContent = title;
+      tt.textContent = xmlSafe(title);
     }
   }
   // highlights and marks under the text

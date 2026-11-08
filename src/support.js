@@ -23,7 +23,7 @@ const FUNDING_LABELS = {
 };
 
 // This extension's Marketplace id. The footer's "Rate" link opens its review page; nothing asks for a rating.
-const SELF_ID = "zovo.code-screenshot";
+const SELF_ID = "zovo.zovo-code-screenshot";
 
 // [id, name, one line]. Live ones are on the Marketplace. Queued ones are not there yet: they open GitHub.
 const LIVE = [
@@ -200,13 +200,13 @@ const LIVE = [
 ];
 const QUEUED = [
   [
-    "zovo.code-screenshot",
+    "zovo.zovo-code-screenshot",
     "Code Screenshot & Code Snapshot (Copy Code as Image, PNG/SVG)",
     "code screenshot and code snapshot in one key: select code, press Cmd+Alt+C (Shift+Alt+C) and a PNG of it is on your clipboard, in your editor theme, font and colors. Save PNG or SVG, line numbers, highlights, window frame, backgrounds. Free, no sign-in, works offline.",
     "https://github.com/theluckystrike/code-screenshot-vscode"
   ],
   [
-    "zovo.rst-preview",
+    "zovo.zovo-rst-preview",
     "RST Preview & reStructuredText Preview (RST Viewer, No Python)",
     "rST preview and reStructuredText preview for VS Code with no Python, no Sphinx and no setup. Live preview with scroll sync, grid and list tables, admonitions, code colors, math, images, includes, outline and HTML export. Free, works offline.",
     "https://github.com/theluckystrike/rst-preview-vscode"
